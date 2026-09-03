@@ -1,0 +1,76 @@
+<div class="board-header">
+  <div>
+    <h2>Your board</h2>
+    <p class="board-subtitle">
+      {{ totalTasks }} task{{ totalTasks === 1 ? '' : 's' }} across {{ columns().length }} columns
+    </p>
+  </div>
+  <button type="button" class="btn-gradient new-task-btn" (click)="openCreate()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+      <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+    </svg>
+    New task
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="board-grid">
+    @for (i of [0, 1, 2]; track i) {
+      <div class="column glass-panel skeleton-column">
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="board-grid" cdkDropListGroup>
+    @for (column of columns(); track column.status) {
+      <div class="column glass-panel">
+        <div class="column-header">
+          <span class="status-dot" [class]="'status-' + column.status.toLowerCase()"></span>
+          <h3>{{ column.label }}</h3>
+          <span class="column-count">{{ column.tasks.length }}</span>
+        </div>
+
+        <div
+          class="column-list"
+          cdkDropList
+          [id]="column.status"
+          [cdkDropListData]="column.tasks"
+          (cdkDropListDropped)="onDrop($event)"
+        >
+          @for (task of column.tasks; track task.id) {
+            <app-task-card
+              cdkDrag
+              [task]="task"
+              (edit)="openEdit(task)"
+              (deleteRequested)="confirmDelete(task)"
+            />
+          } @empty {
+            <p class="empty-state">Drop tasks here, or create a new one.</p>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+@if (drawerState(); as state) {
+  <app-task-form-drawer
+    [editingTask]="state.task"
+    [submitting]="savingTask()"
+    (save)="saveTask($event)"
+    (cancelled)="closeDrawer()"
+  />
+}
+
+@if (pendingDelete(); as task) {
+  <app-confirm-dialog
+    title="Delete this task?"
+    [message]="'“' + task.title + '” will be permanently deleted.'"
+    confirmLabel="Delete"
+    (confirmed)="performDelete()"
+    (cancelled)="cancelDelete()"
+  />
+}

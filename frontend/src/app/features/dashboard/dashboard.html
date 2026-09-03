@@ -1,14 +1,20 @@
-<div class="dashboard">
-  <header class="dashboard-header">
-    <h1>LifeHub</h1>
-    <button type="button" (click)="logout()">Log out</button>
+<div class="page">
+  <header class="top-bar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <h1>LifeHub</h1>
+    </div>
+
+    <div class="user-chip">
+      @if (user(); as u) {
+        <div class="avatar">{{ u.displayName.charAt(0).toUpperCase() }}</div>
+        <span class="user-name">{{ u.displayName }}</span>
+      }
+      <button type="button" class="logout-btn" (click)="logout()">Log out</button>
+    </div>
   </header>
 
-  @if (loading()) {
-    <p>Loading…</p>
-  } @else if (user()) {
-    <p>Welcome, {{ user()!.displayName }} ({{ user()!.email }})</p>
-  } @else {
-    <p>Could not load your profile.</p>
-  }
+  <main class="content">
+    <app-task-board />
+  </main>
 </div>

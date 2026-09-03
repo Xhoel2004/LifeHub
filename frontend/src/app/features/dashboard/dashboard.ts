@@ -2,9 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserService } from '../../core/services/user.service';
 import { UserResponse } from '../../shared/models/user.model';
+import { TaskBoard } from '../tasks/task-board/task-board';
 
 @Component({
   selector: 'app-dashboard',
+  imports: [TaskBoard],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -13,17 +15,11 @@ export class Dashboard {
   private readonly authService = inject(AuthService);
 
   readonly user = signal<UserResponse | null>(null);
-  readonly loading = signal(true);
 
   constructor() {
     this.userService.getCurrentUser().subscribe({
-      next: (user) => {
-        this.user.set(user);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-      },
+      next: (user) => this.user.set(user),
+      error: () => {},
     });
   }
 

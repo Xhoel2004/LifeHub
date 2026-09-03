@@ -1,0 +1,12 @@
+<div class="backdrop" (click)="cancelled.emit()">
+  <div class="dialog glass-panel" (click)="$event.stopPropagation()">
+    <h3>{{ title() }}</h3>
+    @if (message()) {
+      <p>{{ message() }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="btn-ghost" (click)="cancelled.emit()">Cancel</button>
+      <button type="button" class="btn-danger" (click)="confirmed.emit()">{{ confirmLabel() }}</button>
+    </div>
+  </div>
+</div>
