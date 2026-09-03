@@ -1,0 +1,14 @@
+<div class="dashboard">
+  <header class="dashboard-header">
+    <h1>LifeHub</h1>
+    <button type="button" (click)="logout()">Log out</button>
+  </header>
+
+  @if (loading()) {
+    <p>Loading…</p>
+  } @else if (user()) {
+    <p>Welcome, {{ user()!.displayName }} ({{ user()!.email }})</p>
+  } @else {
+    <p>Could not load your profile.</p>
+  }
+</div>
