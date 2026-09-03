@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { TaskResponse } from '../../../shared/models/task.model';
+import { getDueInfo } from '../../../shared/utils/task-date.util';
 
 @Component({
   selector: 'app-task-card',
@@ -23,34 +24,5 @@ export class TaskCard {
     }
   });
 
-  readonly dueInfo = computed(() => {
-    const dueDate = this.task().dueDate;
-    if (!dueDate) {
-      return null;
-    }
-
-    const today = startOfDay(new Date());
-    const due = startOfDay(new Date(`${dueDate}T00:00:00`));
-    const diffDays = Math.round((due.getTime() - today.getTime()) / 86_400_000);
-
-    if (diffDays < 0 && this.task().status !== 'DONE') {
-      return { text: `Overdue by ${Math.abs(diffDays)}d`, overdue: true };
-    }
-    if (diffDays === 0) {
-      return { text: 'Due today', overdue: false };
-    }
-    if (diffDays === 1) {
-      return { text: 'Due tomorrow', overdue: false };
-    }
-    if (diffDays <= 7) {
-      return { text: `Due in ${diffDays}d`, overdue: false };
-    }
-    return { text: due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), overdue: false };
-  });
-}
-
-function startOfDay(date: Date): Date {
-  const copy = new Date(date);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
+  readonly dueInfo = computed(() => getDueInfo(this.task()));
 }

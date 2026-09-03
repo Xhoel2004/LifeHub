@@ -16,5 +16,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
     canActivate: [authGuard],
   },
+  {
+    path: 'board',
+    loadComponent: () =>
+      import('./features/tasks/task-board-page/task-board-page').then((m) => m.TaskBoardPage),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'budget',
+    loadComponent: () => import('./features/budget/budget-page/budget-page').then((m) => m.BudgetPage),
+    canActivate: [authGuard],
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];

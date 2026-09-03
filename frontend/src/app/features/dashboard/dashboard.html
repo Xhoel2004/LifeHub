@@ -1,20 +1,122 @@
 <div class="page">
-  <header class="top-bar">
-    <div class="brand">
-      <span class="brand-mark"></span>
-      <h1>LifeHub</h1>
-    </div>
-
-    <div class="user-chip">
-      @if (user(); as u) {
-        <div class="avatar">{{ u.displayName.charAt(0).toUpperCase() }}</div>
-        <span class="user-name">{{ u.displayName }}</span>
-      }
-      <button type="button" class="logout-btn" (click)="logout()">Log out</button>
-    </div>
-  </header>
+  <app-top-bar [user]="user()" />
 
   <main class="content">
-    <app-task-board />
+    <section class="welcome">
+      <div>
+        <h2>
+          @if (user(); as u) {
+            Welcome back, {{ u.displayName }}
+          } @else {
+            Welcome back
+          }
+        </h2>
+        <p class="welcome-subtitle">Here's what's happening with your tasks.</p>
+      </div>
+      <div class="welcome-actions">
+        <button type="button" class="btn-gradient new-task-btn" (click)="openCreate()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          New task
+        </button>
+        <a class="btn-ghost" routerLink="/board">View full board →</a>
+      </div>
+    </section>
+
+    @if (loading()) {
+      <div class="stats-grid">
+        @for (i of [0, 1, 2, 3, 4]; track i) {
+          <div class="stat-tile glass-panel skeleton-tile"></div>
+        }
+      </div>
+      <div class="lists-grid">
+        <div class="list-panel glass-panel skeleton-panel"></div>
+        <div class="list-panel glass-panel skeleton-panel"></div>
+      </div>
+    } @else if (loadError()) {
+      <div class="state-panel glass-panel">
+        <p>Couldn't load your tasks.</p>
+        <button type="button" class="btn-ghost" (click)="retry()">Try again</button>
+      </div>
+    } @else if (totalTasks() === 0) {
+      <div class="state-panel glass-panel empty-panel">
+        <h3>No tasks yet</h3>
+        <p>Create your first task to start tracking your work.</p>
+        <button type="button" class="btn-gradient" (click)="openCreate()">+ Create a task</button>
+      </div>
+    } @else {
+      <section class="stats-grid">
+        <div class="stat-tile glass-panel">
+          <span class="stat-value">{{ totalTasks() }}</span>
+          <span class="stat-label">Total tasks</span>
+        </div>
+        <div class="stat-tile glass-panel">
+          <span class="stat-value">{{ todoCount() }}</span>
+          <span class="stat-label">To do</span>
+        </div>
+        <div class="stat-tile glass-panel">
+          <span class="stat-value">{{ inProgressCount() }}</span>
+          <span class="stat-label">In progress</span>
+        </div>
+        <div class="stat-tile glass-panel">
+          <span class="stat-value">{{ doneCount() }}</span>
+          <span class="stat-label">Completed</span>
+        </div>
+        <div class="stat-tile glass-panel" [class.stat-tile-danger]="overdueTasks().length > 0">
+          <span class="stat-value">{{ overdueTasks().length }}</span>
+          <span class="stat-label">Overdue</span>
+        </div>
+      </section>
+
+      <section class="lists-grid">
+        <div class="list-panel glass-panel">
+          <h3>Upcoming</h3>
+          @if (upcomingTasks().length === 0) {
+            <p class="list-empty">Nothing due soon.</p>
+          } @else {
+            <ul class="task-list">
+              @for (task of upcomingTasks(); track task.id) {
+                <li class="task-row" (click)="openEdit(task)">
+                  <span class="row-dot" [class]="'priority-' + task.priority.toLowerCase()"></span>
+                  <span class="row-title">{{ task.title }}</span>
+                  @if (dueInfoFor(task); as due) {
+                    <span class="row-chip" [class.overdue]="due.overdue">{{ due.text }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <div class="list-panel glass-panel">
+          <h3>Recent tasks</h3>
+          @if (recentTasks().length === 0) {
+            <p class="list-empty">No recent activity.</p>
+          } @else {
+            <ul class="task-list">
+              @for (task of recentTasks(); track task.id) {
+                <li class="task-row" (click)="openEdit(task)">
+                  <span class="row-dot" [class]="'priority-' + task.priority.toLowerCase()"></span>
+                  <span class="row-title">{{ task.title }}</span>
+                  <span class="row-chip status-chip" [class]="'status-' + task.status.toLowerCase()">
+                    {{ statusLabel(task.status) }}
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+    }
   </main>
 </div>
+
+@if (drawerState(); as state) {
+  <app-task-form-drawer
+    [editingTask]="state.task"
+    [submitting]="savingTask()"
+    (save)="saveTask($event)"
+    (cancelled)="closeDrawer()"
+  />
+}
