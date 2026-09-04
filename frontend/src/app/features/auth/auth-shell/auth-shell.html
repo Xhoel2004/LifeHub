@@ -1,0 +1,47 @@
+<div class="auth-page">
+  <div class="auth-layout">
+    <div class="pitch">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <span class="brand-name">LifeHub</span>
+      </div>
+      <h1>One place for your everyday life.</h1>
+      <p>Tasks, habits, journal and budget — tracked together, so you can see how your week is actually going.</p>
+      <ul class="pitch-list">
+        <li><span class="dot dot-1"></span>Kanban task board with drag &amp; drop</li>
+        <li><span class="dot dot-2"></span>Streaks and weekly habit tracking</li>
+        <li><span class="dot dot-3"></span>Private journal and monthly budget</li>
+      </ul>
+    </div>
+
+    <div class="card glass-panel">
+      <div class="tabs" role="tablist" aria-label="Sign in or create an account">
+        <a
+          routerLink="/login"
+          role="tab"
+          [attr.aria-selected]="mode() === 'login'"
+          class="tab"
+          [class.active]="mode() === 'login'"
+          >Sign in</a
+        >
+        <a
+          routerLink="/register"
+          role="tab"
+          [attr.aria-selected]="mode() === 'register'"
+          class="tab"
+          [class.active]="mode() === 'register'"
+          >Create account</a
+        >
+      </div>
+
+      <h2>{{ title() }}</h2>
+      <p class="subtitle">{{ subtitle() }}</p>
+
+      @if (errorMessage()) {
+        <div role="alert" class="form-error">{{ errorMessage() }}</div>
+      }
+
+      <ng-content />
+    </div>
+  </div>
+</div>

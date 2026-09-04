@@ -1,13 +1,5 @@
-<div class="auth-page">
-  <form class="auth-form glass-panel" [formGroup]="form" (ngSubmit)="submit()">
-    <div class="brand">
-      <span class="brand-mark"></span>
-      <span class="brand-name">LifeHub</span>
-    </div>
-
-    <h1>Welcome back</h1>
-    <p class="subtitle">Log in to see your board.</p>
-
+<app-auth-shell mode="login" [errorMessage]="errorMessage()">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="auth-fields">
     <label for="email">Email</label>
     <input id="email" type="email" formControlName="email" autocomplete="email" placeholder="you@example.com" />
     @if (form.controls.email.invalid && form.controls.email.touched) {
@@ -26,14 +18,10 @@
       <p class="field-error">Password is required.</p>
     }
 
-    @if (errorMessage()) {
-      <p class="form-error">{{ errorMessage() }}</p>
-    }
-
     <button type="submit" class="btn-gradient submit-btn" [disabled]="submitting()">
-      {{ submitting() ? 'Logging in…' : 'Log in' }}
+      {{ submitting() ? 'Signing in…' : 'Sign in' }}
     </button>
 
-    <p class="switch-link">No account? <a routerLink="/register">Register</a></p>
+    <p class="switch-link">New around here? <a routerLink="/register">Create an account</a></p>
   </form>
-</div>
+</app-auth-shell>

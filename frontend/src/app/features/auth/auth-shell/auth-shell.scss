@@ -1,0 +1,159 @@
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+}
+
+.auth-layout {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5rem;
+}
+
+/* ── Pitch panel ───────────────────────────────────── */
+
+.pitch {
+  flex: 1;
+  min-width: 0;
+  max-width: 360px;
+
+  h1 {
+    font-size: 2.1rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 1.75rem 0 0.9rem;
+  }
+
+  p {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0 0 1.5rem;
+  }
+
+  @media (max-width: 820px) {
+    display: none;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--accent-gradient);
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.5);
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pitch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-1 {
+  background: var(--accent-1);
+}
+.dot-2 {
+  background: var(--accent-2);
+}
+.dot-3 {
+  background: var(--accent-3);
+}
+
+/* ── Card ──────────────────────────────────────────── */
+
+.card {
+  flex: 1;
+  min-width: 0;
+  max-width: 400px;
+  width: 100%;
+  padding: 2rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  margin-bottom: 1.6rem;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.55rem;
+  border-radius: 9px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &.active {
+    color: var(--text-primary);
+    background: var(--bg-panel-strong);
+  }
+}
+
+.card h2 {
+  font-size: 1.4rem;
+  margin: 0 0 0.35rem;
+}
+
+.subtitle {
+  margin: 0 0 1.4rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  margin-bottom: 1.1rem;
+}

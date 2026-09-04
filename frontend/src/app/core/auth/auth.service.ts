@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthResponse, LoginRequest, RegisterRequest } from '../../shared/models/auth.model';
+import { UserService } from '../services/user.service';
 
 const TOKEN_KEY = 'lifehub_token';
 
@@ -11,6 +12,7 @@ const TOKEN_KEY = 'lifehub_token';
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly userService = inject(UserService);
 
   private readonly tokenSignal = signal<string | null>(this.readStoredToken());
   readonly isAuthenticated = computed(() => this.tokenSignal() !== null);
@@ -34,6 +36,7 @@ export class AuthService {
   logout(): void {
     this.tokenSignal.set(null);
     this.removeStoredToken();
+    this.userService.clearCurrentUser();
     this.router.navigateByUrl('/login');
   }
 
