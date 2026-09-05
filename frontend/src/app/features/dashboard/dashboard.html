@@ -1,77 +1,64 @@
 <div class="page">
-  <app-top-bar [user]="user()" />
+  <section class="welcome">
+    <div>
+      <h2>
+        @if (firstName()) {
+          Good to see you, {{ firstName() }}
+        } @else {
+          Good to see you
+        }
+      </h2>
+      <p class="welcome-subtitle">Here's what's happening across your week.</p>
+    </div>
+    <div class="welcome-actions">
+      <button type="button" class="pill-btn" (click)="openCreate()">+ Add task</button>
+      <a class="pill-btn" routerLink="/habits">Log habit</a>
+      <a class="pill-btn" routerLink="/journal">New journal entry</a>
+    </div>
+  </section>
 
-  <main class="content">
-    <section class="welcome">
-      <div>
-        <h2>
-          @if (user(); as u) {
-            Welcome back, {{ u.displayName }}
-          } @else {
-            Welcome back
-          }
-        </h2>
-        <p class="welcome-subtitle">Here's what's happening with your tasks.</p>
+  @if (loading()) {
+    <div class="stats-grid">
+      @for (i of [0, 1, 2, 3]; track i) {
+        <div class="stat-tile glass-panel skeleton-tile"></div>
+      }
+    </div>
+    <div class="dash-grid">
+      <div class="list-panel glass-panel skeleton-panel"></div>
+      <div class="list-panel glass-panel skeleton-panel"></div>
+    </div>
+  } @else if (loadError()) {
+    <div class="state-panel glass-panel">
+      <p>Couldn't load your tasks.</p>
+      <button type="button" class="btn-ghost" (click)="retry()">Try again</button>
+    </div>
+  } @else {
+    <section class="stats-grid">
+      <div class="stat-tile glass-panel">
+        <span class="stat-value">{{ totalTasks() }}</span>
+        <span class="stat-label">Total tasks</span>
       </div>
-      <div class="welcome-actions">
-        <button type="button" class="btn-gradient new-task-btn" (click)="openCreate()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
-          </svg>
-          New task
-        </button>
-        <a class="btn-ghost" routerLink="/board">View full board →</a>
+      <div class="stat-tile glass-panel">
+        <span class="stat-value">{{ inProgressCount() }}</span>
+        <span class="stat-label">In progress</span>
+      </div>
+      <div class="stat-tile glass-panel">
+        <span class="stat-value">{{ doneCount() }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+      <div class="stat-tile glass-panel" [class.stat-tile-danger]="overdueTasks().length > 0">
+        <span class="stat-value">{{ overdueTasks().length }}</span>
+        <span class="stat-label">Overdue</span>
       </div>
     </section>
 
-    @if (loading()) {
-      <div class="stats-grid">
-        @for (i of [0, 1, 2, 3, 4]; track i) {
-          <div class="stat-tile glass-panel skeleton-tile"></div>
-        }
-      </div>
-      <div class="lists-grid">
-        <div class="list-panel glass-panel skeleton-panel"></div>
-        <div class="list-panel glass-panel skeleton-panel"></div>
-      </div>
-    } @else if (loadError()) {
-      <div class="state-panel glass-panel">
-        <p>Couldn't load your tasks.</p>
-        <button type="button" class="btn-ghost" (click)="retry()">Try again</button>
-      </div>
-    } @else if (totalTasks() === 0) {
-      <div class="state-panel glass-panel empty-panel">
-        <h3>No tasks yet</h3>
-        <p>Create your first task to start tracking your work.</p>
-        <button type="button" class="btn-gradient" (click)="openCreate()">+ Create a task</button>
-      </div>
-    } @else {
-      <section class="stats-grid">
-        <div class="stat-tile glass-panel">
-          <span class="stat-value">{{ totalTasks() }}</span>
-          <span class="stat-label">Total tasks</span>
-        </div>
-        <div class="stat-tile glass-panel">
-          <span class="stat-value">{{ todoCount() }}</span>
-          <span class="stat-label">To do</span>
-        </div>
-        <div class="stat-tile glass-panel">
-          <span class="stat-value">{{ inProgressCount() }}</span>
-          <span class="stat-label">In progress</span>
-        </div>
-        <div class="stat-tile glass-panel">
-          <span class="stat-value">{{ doneCount() }}</span>
-          <span class="stat-label">Completed</span>
-        </div>
-        <div class="stat-tile glass-panel" [class.stat-tile-danger]="overdueTasks().length > 0">
-          <span class="stat-value">{{ overdueTasks().length }}</span>
-          <span class="stat-label">Overdue</span>
-        </div>
-      </section>
-
-      <section class="lists-grid">
+    <div class="dash-grid">
+      <div class="dash-col">
         <div class="list-panel glass-panel">
-          <h3>Upcoming</h3>
+          <div class="panel-head">
+            <h3>Upcoming tasks</h3>
+            <a routerLink="/board">Open board</a>
+          </div>
           @if (upcomingTasks().length === 0) {
             <p class="list-empty">Nothing due soon.</p>
           } @else {
@@ -90,26 +77,127 @@
         </div>
 
         <div class="list-panel glass-panel">
-          <h3>Recent tasks</h3>
+          <div class="panel-head">
+            <h3>Recently updated</h3>
+            <span class="mono-tag">LAST 48H</span>
+          </div>
           @if (recentTasks().length === 0) {
             <p class="list-empty">No recent activity.</p>
           } @else {
             <ul class="task-list">
               @for (task of recentTasks(); track task.id) {
                 <li class="task-row" (click)="openEdit(task)">
-                  <span class="row-dot" [class]="'priority-' + task.priority.toLowerCase()"></span>
+                  <span class="status-dot" [class]="'status-' + task.status.toLowerCase()"></span>
                   <span class="row-title">{{ task.title }}</span>
-                  <span class="row-chip status-chip" [class]="'status-' + task.status.toLowerCase()">
-                    {{ statusLabel(task.status) }}
-                  </span>
+                  <span class="mono-tag">Moved to {{ statusLabel(task.status) }}</span>
                 </li>
               }
             </ul>
           }
         </div>
-      </section>
-    }
-  </main>
+      </div>
+
+      <div class="dash-col">
+        <div class="list-panel glass-panel">
+          <div class="panel-head">
+            <h3>Habits today</h3>
+            <a routerLink="/habits">All habits</a>
+          </div>
+
+          @if (habitsLoading()) {
+            <div class="skeleton-inline"></div>
+          } @else if (habitsError()) {
+            <p class="list-empty">
+              Couldn't load habits.
+              <button type="button" class="btn-ghost" (click)="retryHabits()">Try again</button>
+            </p>
+          } @else if (habits().length === 0) {
+            <p class="list-empty">No habits yet. <a routerLink="/habits">Add one</a>.</p>
+          } @else {
+            <div class="habit-summary">
+              <div class="habit-ring" [style.--pct]="habitDonePct()">
+                <div class="habit-ring-inner">
+                  <span class="ring-value">{{ habitDonePct() }}%</span>
+                  <span class="ring-label">TODAY</span>
+                </div>
+              </div>
+              <div class="habit-summary-text">
+                <div class="habit-count">{{ habitDoneCount() }} of {{ habits().length }} logged</div>
+                @if (topStreak(); as top) {
+                  @if (top.currentStreak > 0) {
+                    <div class="habit-note">Longest active streak: {{ top.currentStreak }} days on {{ top.name }}.</div>
+                  }
+                }
+              </div>
+            </div>
+            <div class="habit-preview-list">
+              @for (h of habitPreview(); track h.id) {
+                <div class="habit-preview-row">
+                  <button
+                    type="button"
+                    class="habit-check"
+                    [class.done]="h.completedToday"
+                    [disabled]="togglingHabitId() === h.id"
+                    [attr.aria-pressed]="h.completedToday"
+                    (click)="toggleHabitToday(h)"
+                  >
+                    {{ h.completedToday ? '✓' : '' }}
+                  </button>
+                  <span class="habit-name">{{ h.name }}</span>
+                  <span class="mono-tag">{{ h.currentStreak }}d</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="list-panel glass-panel">
+          <div class="panel-head">
+            <h3>This month's budget</h3>
+            <a routerLink="/budget">Details</a>
+          </div>
+
+          @if (budgetLoading()) {
+            <div class="skeleton-inline"></div>
+          } @else if (budgetError()) {
+            <p class="list-empty">
+              Couldn't load budget.
+              <button type="button" class="btn-ghost" (click)="retryBudget()">Try again</button>
+            </p>
+          } @else if (budgetSummary().totalIncome === 0 && budgetSummary().totalExpense === 0) {
+            <p class="list-empty">No entries yet. <a routerLink="/budget">Add one</a>.</p>
+          } @else {
+            <div class="budget-balance">
+              <span class="balance-value">{{ budgetSummary().net | number: '1.2-2' }}</span>
+              <span class="balance-note">net of {{ budgetSummary().totalIncome | number: '1.2-2' }} income</span>
+            </div>
+            <div class="spend-bar">
+              <div class="spend-bar-fill" [style.width.%]="spentPct() > 100 ? 100 : spentPct()"></div>
+            </div>
+            <div class="spend-meta">
+              <span>{{ spentPct() }}% spent</span>
+              <span>{{ budgetSummary().totalExpense | number: '1.2-2' }} of {{ budgetSummary().totalIncome | number: '1.2-2' }}</span>
+            </div>
+            @if (topCategories().length > 0) {
+              <div class="category-list">
+                @for (c of topCategories(); track c.category) {
+                  <div class="category-row">
+                    <span class="category-name">{{ c.category }}</span>
+                    <span class="mono-tag">{{ c.amount | number: '1.2-2' }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <a class="journal-cta glass-panel" routerLink="/journal">
+          <h3>Write today's entry</h3>
+          <p>Capture how today went in your private journal.</p>
+        </a>
+      </div>
+    </div>
+  }
 </div>
 
 @if (drawerState(); as state) {
