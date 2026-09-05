@@ -1,17 +1,4 @@
 .page {
   max-width: 1160px;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 3rem;
-}
-
-.back-link {
-  display: inline-block;
-  margin-bottom: 1rem;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  text-decoration: none;
-
-  &:hover {
-    color: var(--text-primary);
-  }
 }

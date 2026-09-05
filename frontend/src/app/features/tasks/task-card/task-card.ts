@@ -9,6 +9,7 @@ import { getDueInfo } from '../../../shared/utils/task-date.util';
 })
 export class TaskCard {
   readonly task = input.required<TaskResponse>();
+  readonly hideDescription = input(false);
 
   readonly edit = output<void>();
   readonly deleteRequested = output<void>();

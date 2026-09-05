@@ -1,18 +1,16 @@
-import {
-  CdkDrag,
-  CdkDragDrop,
-  CdkDropList,
-  CdkDropListGroup,
-  moveItemInArray,
-  transferArrayItem,
-} from '@angular/cdk/drag-drop';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { PreferencesService } from '../../../core/services/preferences.service';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { ToastService } from '../../../shared/components/toast/toast.service';
-import { TaskRequest, TaskResponse, TaskStatus } from '../../../shared/models/task.model';
+import { TaskPriority, TaskRequest, TaskResponse, TaskStatus } from '../../../shared/models/task.model';
+import { daysUntilDue, isOverdue } from '../../../shared/utils/task-date.util';
 import { TaskCard } from '../task-card/task-card';
 import { TaskFormDrawer } from '../task-form-drawer/task-form-drawer';
 import { TaskService } from '../task.service';
+
+type PriorityFilter = 'all' | TaskPriority;
+type DueFilter = 'all' | 'overdue' | 'week' | 'none';
 
 interface Column {
   status: TaskStatus;
@@ -39,24 +37,83 @@ function toRequest(task: TaskResponse): TaskRequest {
 export class TaskBoard implements OnInit {
   private readonly taskService = inject(TaskService);
   private readonly toastService = inject(ToastService);
+  private readonly preferencesService = inject(PreferencesService);
+
+  readonly preferences = this.preferencesService.preferences;
 
   readonly loading = signal(true);
-  readonly columns = signal<Column[]>([
-    { status: 'TODO', label: 'To do', tasks: [] },
-    { status: 'IN_PROGRESS', label: 'In progress', tasks: [] },
-    { status: 'DONE', label: 'Done', tasks: [] },
-  ]);
+  readonly allTasks = signal<TaskResponse[]>([]);
+
+  readonly search = signal('');
+  readonly priorityFilter = signal<PriorityFilter>('all');
+  readonly dueFilter = signal<DueFilter>('all');
 
   readonly drawerState = signal<{ task: TaskResponse | null } | null>(null);
   readonly savingTask = signal(false);
   readonly pendingDelete = signal<TaskResponse | null>(null);
 
+  readonly filteredTasks = computed(() => {
+    const search = this.search().trim().toLowerCase();
+    const priority = this.priorityFilter();
+    const due = this.dueFilter();
+
+    return this.allTasks().filter((task) => {
+      if (search && !task.title.toLowerCase().includes(search)) {
+        return false;
+      }
+      if (priority !== 'all' && task.priority !== priority) {
+        return false;
+      }
+      if (due === 'overdue' && !isOverdue(task)) {
+        return false;
+      }
+      if (due === 'week' && !(task.dueDate && !isOverdue(task) && daysUntilDue(task.dueDate) <= 7)) {
+        return false;
+      }
+      if (due === 'none' && task.dueDate) {
+        return false;
+      }
+      return true;
+    });
+  });
+
+  readonly columns = computed<Column[]>(() => {
+    const byStatus: Record<TaskStatus, TaskResponse[]> = { TODO: [], IN_PROGRESS: [], DONE: [] };
+    for (const task of this.filteredTasks()) {
+      byStatus[task.status].push(task);
+    }
+    return [
+      { status: 'TODO', label: 'To do', tasks: byStatus.TODO },
+      { status: 'IN_PROGRESS', label: 'In progress', tasks: byStatus.IN_PROGRESS },
+      { status: 'DONE', label: 'Done', tasks: byStatus.DONE },
+    ];
+  });
+
+  readonly totalTasks = computed(() => this.allTasks().length);
+  readonly filtersActive = computed(
+    () => this.search().trim() !== '' || this.priorityFilter() !== 'all' || this.dueFilter() !== 'all',
+  );
+
   ngOnInit(): void {
     this.loadTasks();
   }
 
-  get totalTasks(): number {
-    return this.columns().reduce((sum, col) => sum + col.tasks.length, 0);
+  setSearch(value: string): void {
+    this.search.set(value);
+  }
+
+  setPriorityFilter(value: PriorityFilter): void {
+    this.priorityFilter.set(value);
+  }
+
+  setDueFilter(value: DueFilter): void {
+    this.dueFilter.set(value);
+  }
+
+  clearFilters(): void {
+    this.search.set('');
+    this.priorityFilter.set('all');
+    this.dueFilter.set('all');
   }
 
   openCreate(): void {
@@ -93,6 +150,10 @@ export class TaskBoard implements OnInit {
   }
 
   confirmDelete(task: TaskResponse): void {
+    if (this.preferences().skipDeleteConfirm) {
+      this.deleteTask(task);
+      return;
+    }
     this.pendingDelete.set(task);
   }
 
@@ -105,7 +166,10 @@ export class TaskBoard implements OnInit {
     if (!task) {
       return;
     }
+    this.deleteTask(task);
+  }
 
+  private deleteTask(task: TaskResponse): void {
     this.taskService.delete(task.id).subscribe({
       next: () => {
         this.pendingDelete.set(null);
@@ -120,35 +184,18 @@ export class TaskBoard implements OnInit {
 
   onDrop(event: CdkDragDrop<TaskResponse[]>): void {
     if (event.previousContainer === event.container) {
-      if (event.previousIndex !== event.currentIndex) {
-        moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-        this.columns.update((cols) => [...cols]);
-      }
       return;
     }
 
     const task = event.previousContainer.data[event.previousIndex];
     const newStatus = event.container.id as TaskStatus;
 
-    transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
-    this.columns.update((cols) => [...cols]);
-
     this.taskService.update(task.id, toRequest({ ...task, status: newStatus })).subscribe({
       next: (updated) => {
-        const idx = event.container.data.findIndex((t) => t.id === updated.id);
-        if (idx !== -1) {
-          event.container.data[idx] = updated;
-          this.columns.update((cols) => [...cols]);
-        }
+        this.allTasks.update((tasks) => tasks.map((t) => (t.id === updated.id ? updated : t)));
       },
       error: () => {
-        transferArrayItem(
-          event.container.data,
-          event.previousContainer.data,
-          event.currentIndex,
-          event.previousIndex,
-        );
-        this.columns.update((cols) => [...cols]);
+        this.toastService.show('Could not move task. Please try again.');
       },
     });
   }
@@ -157,20 +204,12 @@ export class TaskBoard implements OnInit {
     this.loading.set(true);
     this.taskService.list().subscribe({
       next: (tasks) => {
-        this.applyTasks(tasks);
+        this.allTasks.set(tasks);
         this.loading.set(false);
       },
       error: () => {
         this.loading.set(false);
       },
     });
-  }
-
-  private applyTasks(tasks: TaskResponse[]): void {
-    const byStatus: Record<TaskStatus, TaskResponse[]> = { TODO: [], IN_PROGRESS: [], DONE: [] };
-    for (const task of tasks) {
-      byStatus[task.status].push(task);
-    }
-    this.columns.set(this.columns().map((col) => ({ ...col, tasks: byStatus[col.status] })));
   }
 }

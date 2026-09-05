@@ -30,7 +30,7 @@
 
   <h4 class="card-title">{{ task().title }}</h4>
 
-  @if (task().description) {
+  @if (task().description && !hideDescription()) {
     <p class="card-description">{{ task().description }}</p>
   }
 

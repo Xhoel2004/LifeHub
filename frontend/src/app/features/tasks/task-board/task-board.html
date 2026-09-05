@@ -1,9 +1,7 @@
 <div class="board-header">
   <div>
     <h2>Your board</h2>
-    <p class="board-subtitle">
-      {{ totalTasks }} task{{ totalTasks === 1 ? '' : 's' }} across {{ columns().length }} columns
-    </p>
+    <p class="board-subtitle">{{ totalTasks() }} task{{ totalTasks() === 1 ? '' : 's' }} across 3 columns</p>
   </div>
   <button type="button" class="btn-gradient new-task-btn" (click)="openCreate()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
@@ -11,6 +9,41 @@
     </svg>
     New task
   </button>
+</div>
+
+<div class="filter-bar">
+  <input
+    class="filter-search"
+    [value]="search()"
+    (input)="setSearch($any($event.target).value)"
+    placeholder="Search tasks…"
+    aria-label="Search tasks"
+  />
+  <select
+    class="filter-select"
+    [value]="priorityFilter()"
+    (change)="setPriorityFilter($any($event.target).value)"
+    aria-label="Filter by priority"
+  >
+    <option value="all">All priorities</option>
+    <option value="HIGH">High</option>
+    <option value="MEDIUM">Medium</option>
+    <option value="LOW">Low</option>
+  </select>
+  <select
+    class="filter-select"
+    [value]="dueFilter()"
+    (change)="setDueFilter($any($event.target).value)"
+    aria-label="Filter by due date"
+  >
+    <option value="all">Any due date</option>
+    <option value="overdue">Overdue</option>
+    <option value="week">This week</option>
+    <option value="none">No due date</option>
+  </select>
+  @if (filtersActive()) {
+    <button type="button" class="filter-reset" (click)="clearFilters()">Reset</button>
+  }
 </div>
 
 @if (loading()) {
@@ -44,11 +77,14 @@
             <app-task-card
               cdkDrag
               [task]="task"
+              [hideDescription]="preferences().hideTaskDescriptions"
               (edit)="openEdit(task)"
               (deleteRequested)="confirmDelete(task)"
             />
           } @empty {
-            <p class="empty-state">Drop tasks here, or create a new one.</p>
+            <p class="empty-state">
+              {{ filtersActive() ? 'No tasks match your filters.' : 'Drop tasks here, or create a new one.' }}
+            </p>
           }
         </div>
       </div>
