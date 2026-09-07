@@ -1,0 +1,42 @@
+<div class="backdrop" (click)="cancelled.emit()">
+  <aside class="drawer glass-panel" (click)="$event.stopPropagation()">
+    <header class="drawer-header">
+      <h2>{{ isEditMode() ? 'Edit habit' : 'New habit' }}</h2>
+      <button type="button" class="close-btn" (click)="cancelled.emit()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" />
+        </svg>
+      </button>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="drawer-form">
+      <label for="name">Name</label>
+      <input id="name" type="text" formControlName="name" placeholder="e.g. Read 20 pages" autocomplete="off" />
+      @if (form.controls.name.invalid && form.controls.name.touched) {
+        <p class="field-error">Name is required.</p>
+      }
+
+      <label for="description">Description</label>
+      <textarea
+        id="description"
+        formControlName="description"
+        rows="3"
+        placeholder="Add more detail (optional)"
+      ></textarea>
+
+      <label for="weeklyTarget">Weekly target</label>
+      <select id="weeklyTarget" formControlName="weeklyTarget">
+        @for (n of [1, 2, 3, 4, 5, 6, 7]; track n) {
+          <option [value]="n">{{ n }}x per week</option>
+        }
+      </select>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-ghost" (click)="cancelled.emit()">Cancel</button>
+        <button type="submit" class="btn-gradient" [disabled]="submitting()">
+          {{ submitting() ? 'Saving…' : isEditMode() ? 'Save changes' : 'Add habit' }}
+        </button>
+      </div>
+    </form>
+  </aside>
+</div>

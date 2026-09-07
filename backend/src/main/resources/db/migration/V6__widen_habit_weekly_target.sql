@@ -1,0 +1,2 @@
+ALTER TABLE habits
+    MODIFY COLUMN weekly_target INT NOT NULL DEFAULT 7;
