@@ -1,0 +1,147 @@
+<div class="page">
+  @if (mode() === 'list') {
+    <section class="header-row">
+      <div>
+        <h2>Journal</h2>
+        <p class="subtitle">A private space for daily reflection.</p>
+      </div>
+      <button type="button" class="btn-gradient new-entry-btn" (click)="openNew()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+          <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+        </svg>
+        New entry
+      </button>
+    </section>
+
+    @if (!loading() && !loadError() && entries().length > 0) {
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Search entries…"
+        aria-label="Search journal"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
+      />
+    }
+
+    @if (loading()) {
+      <div class="entry-cards">
+        @for (i of [0, 1, 2]; track i) {
+          <div class="entry-card glass-panel skeleton-card"></div>
+        }
+      </div>
+    } @else if (loadError()) {
+      <div class="state-panel glass-panel">
+        <p>Couldn't load your journal.</p>
+        <button type="button" class="btn-ghost" (click)="retry()">Try again</button>
+      </div>
+    } @else if (entries().length === 0) {
+      <div class="state-panel glass-panel empty-panel">
+        <h3>No entries yet</h3>
+        <p>Write your first journal entry to start reflecting on your days.</p>
+        <button type="button" class="btn-gradient" (click)="openNew()">+ New entry</button>
+      </div>
+    } @else if (filteredEntries().length === 0) {
+      <div class="state-panel glass-panel">
+        <p>No entries match your search.</p>
+      </div>
+    } @else {
+      <div class="entry-cards">
+        @for (entry of filteredEntries(); track entry.id) {
+          <div class="entry-card glass-panel">
+            <button type="button" class="entry-main" (click)="openEntry(entry)">
+              <div class="entry-top">
+                <span class="entry-date">{{ entry.entryDate }}</span>
+                <span class="mood-chip">{{ moodOf(entry.mood).emoji }} {{ moodOf(entry.mood).label }}</span>
+              </div>
+              <h3 class="entry-title">{{ entry.title }}</h3>
+              <p class="entry-preview">{{ preview(entry.body) }}</p>
+            </button>
+            <button type="button" class="icon-btn danger" (click)="confirmDelete(entry)" aria-label="Delete entry">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18" stroke-linecap="round" />
+                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    <div class="editor-panel glass-panel">
+      <div class="editor-header">
+        <button type="button" class="btn-ghost back-btn" (click)="backToList()">← All entries</button>
+        @if (editingEntry(); as entry) {
+          <button type="button" class="icon-btn danger" (click)="confirmDelete(entry)" aria-label="Delete entry">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18" stroke-linecap="round" />
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        }
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="date-row">
+          <input type="date" formControlName="entryDate" class="date-input" aria-label="Entry date" />
+        </div>
+
+        <input
+          type="text"
+          formControlName="title"
+          placeholder="Entry title"
+          class="title-input"
+          autocomplete="off"
+        />
+        @if (form.controls.title.invalid && form.controls.title.touched) {
+          <p class="field-error">Title is required.</p>
+        }
+
+        <div class="mood-picker">
+          <span class="mood-picker-label">Mood</span>
+          @for (m of moods; track m.value) {
+            <button
+              type="button"
+              class="mood-btn"
+              [class.active]="form.controls.mood.value === m.value"
+              (click)="pickMood(m.value)"
+            >
+              {{ m.emoji }} {{ m.label }}
+            </button>
+          }
+        </div>
+
+        <textarea
+          formControlName="body"
+          placeholder="What happened today?"
+          class="body-input"
+        ></textarea>
+        @if (form.controls.body.invalid && form.controls.body.touched) {
+          <p class="field-error">Write something before saving.</p>
+        }
+
+        <div class="editor-footer">
+          <span class="word-count">{{ wordCount() }} words</span>
+          <div class="editor-actions">
+            <button type="button" class="btn-ghost" (click)="backToList()">Cancel</button>
+            <button type="submit" class="btn-gradient" [disabled]="saving()">
+              {{ saving() ? 'Saving…' : 'Save entry' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  }
+</div>
+
+@if (pendingDelete(); as entry) {
+  <app-confirm-dialog
+    title="Delete entry?"
+    [message]="'This will permanently remove \'' + entry.title + '\'.'"
+    confirmLabel="Delete"
+    (confirmed)="performDelete()"
+    (cancelled)="cancelDelete()"
+  />
+}
