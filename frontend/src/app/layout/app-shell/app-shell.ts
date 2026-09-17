@@ -49,6 +49,7 @@ export class AppShell {
     { label: 'Habits', path: '/habits', color: 'var(--accent-3)' },
     { label: 'Journal', path: '/journal', color: 'var(--accent-1)' },
     { label: 'Budget', path: '/budget', color: 'var(--accent-2)' },
+    { label: 'Subscriptions', path: '/subscriptions', color: 'var(--accent-3)' },
   ];
 
   readonly secondaryNav: NavItem[] = [{ label: 'Profile', path: '/profile', color: 'var(--text-tertiary)' }];

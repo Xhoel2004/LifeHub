@@ -1,0 +1,70 @@
+<div class="page">
+  @if (user(); as u) {
+    <section class="profile-banner glass-panel">
+      <div class="avatar">{{ userInitials() }}</div>
+      <div class="banner-info">
+        <h2>{{ u.displayName }}</h2>
+        <p>{{ u.email }} · member since {{ u.createdAt | date: 'MMM y' }}</p>
+      </div>
+    </section>
+  }
+
+  <section class="panel glass-panel">
+    <h3>Account</h3>
+    <form [formGroup]="form" (ngSubmit)="saveProfile()" class="account-form">
+      <div class="form-grid">
+        <label>
+          <span>Display name</span>
+          <input type="text" formControlName="displayName" autocomplete="name" />
+          @if (form.controls.displayName.invalid && form.controls.displayName.touched) {
+            <span class="field-error">Display name is required.</span>
+          }
+        </label>
+        <label>
+          <span>Email</span>
+          <input type="email" formControlName="email" autocomplete="email" />
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <span class="field-error">Enter a valid email address.</span>
+          }
+        </label>
+      </div>
+      <button type="submit" class="btn-gradient save-btn" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save changes' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="panel glass-panel">
+    <h3>Appearance &amp; preferences</h3>
+    <p class="panel-hint">Applies to this device only.</p>
+    <div class="preferences-list">
+      @for (row of preferenceRows; track row.key) {
+        <div class="preference-row">
+          <div class="preference-text">
+            <div class="preference-label">{{ row.label }}</div>
+            <div class="preference-hint">{{ row.hint }}</div>
+          </div>
+          <button
+            type="button"
+            class="switch"
+            role="switch"
+            [attr.aria-checked]="preferences()[row.key]"
+            [attr.aria-label]="row.label"
+            [class.on]="preferences()[row.key]"
+            (click)="togglePreference(row.key)"
+          >
+            <span class="switch-knob"></span>
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="panel danger-panel glass-panel">
+    <div>
+      <h3>Sign out</h3>
+      <p class="panel-hint">Ends this session on this device.</p>
+    </div>
+    <button type="button" class="logout-btn" (click)="logout()">Log out</button>
+  </section>
+</div>

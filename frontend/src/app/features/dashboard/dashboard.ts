@@ -5,10 +5,13 @@ import { UserService } from '../../core/services/user.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { BudgetEntryResponse, BudgetSummaryResponse } from '../../shared/models/budget-entry.model';
 import { HabitResponse } from '../../shared/models/habit.model';
+import { SubscriptionResponse } from '../../shared/models/subscription.model';
 import { TaskRequest, TaskResponse, TaskStatus } from '../../shared/models/task.model';
+import { getRenewalInfo, monthlyEquivalent, yearlyEquivalent } from '../../shared/utils/subscription-spend.util';
 import { getDueInfo, isOverdue } from '../../shared/utils/task-date.util';
 import { BudgetService } from '../budget/budget.service';
 import { HabitService } from '../habits/habit.service';
+import { SubscriptionService } from '../subscriptions/subscription.service';
 import { TaskFormDrawer } from '../tasks/task-form-drawer/task-form-drawer';
 import { TaskService } from '../tasks/task.service';
 
@@ -34,6 +37,7 @@ export class Dashboard {
   private readonly taskService = inject(TaskService);
   private readonly habitService = inject(HabitService);
   private readonly budgetService = inject(BudgetService);
+  private readonly subscriptionService = inject(SubscriptionService);
   private readonly toastService = inject(ToastService);
 
   readonly user = this.userService.currentUser;
@@ -52,6 +56,10 @@ export class Dashboard {
   readonly budgetSummary = signal<BudgetSummaryResponse>({ totalIncome: 0, totalExpense: 0, net: 0 });
   readonly budgetLoading = signal(true);
   readonly budgetError = signal(false);
+
+  readonly subscriptions = signal<SubscriptionResponse[]>([]);
+  readonly subscriptionsLoading = signal(true);
+  readonly subscriptionsError = signal(false);
 
   readonly drawerState = signal<{ task: TaskResponse | null } | null>(null);
   readonly savingTask = signal(false);
@@ -105,10 +113,30 @@ export class Dashboard {
       .map(([category, amount]) => ({ category, amount }));
   });
 
+  readonly activeSubscriptions = computed(() => this.subscriptions().filter((s) => s.status === 'ACTIVE'));
+
+  readonly subMonthlySpend = computed(() =>
+    this.activeSubscriptions().reduce((sum, s) => sum + monthlyEquivalent(s.amount, s.billingCycle), 0),
+  );
+
+  readonly subYearlySpend = computed(() =>
+    this.activeSubscriptions().reduce((sum, s) => sum + yearlyEquivalent(s.amount, s.billingCycle), 0),
+  );
+
+  readonly subUpcoming = computed(() =>
+    this.activeSubscriptions()
+      .map((s) => ({ subscription: s, renewal: getRenewalInfo(s) }))
+      .sort((a, b) => a.renewal.daysRemaining - b.renewal.daysRemaining)
+      .slice(0, 3),
+  );
+
+  readonly nextSubRenewal = computed(() => this.subUpcoming()[0] ?? null);
+
   constructor() {
     this.loadTasks();
     this.loadHabits();
     this.loadBudget();
+    this.loadSubscriptions();
   }
 
   statusLabel(status: TaskStatus): string {
@@ -125,6 +153,10 @@ export class Dashboard {
 
   retryBudget(): void {
     this.loadBudget();
+  }
+
+  retrySubscriptions(): void {
+    this.loadSubscriptions();
   }
 
   openCreate(): void {
@@ -226,6 +258,21 @@ export class Dashboard {
       error: () => {
         this.budgetLoading.set(false);
         this.budgetError.set(true);
+      },
+    });
+  }
+
+  private loadSubscriptions(): void {
+    this.subscriptionsLoading.set(true);
+    this.subscriptionsError.set(false);
+    this.subscriptionService.list().subscribe({
+      next: (subscriptions) => {
+        this.subscriptions.set(subscriptions);
+        this.subscriptionsLoading.set(false);
+      },
+      error: () => {
+        this.subscriptionsLoading.set(false);
+        this.subscriptionsError.set(true);
       },
     });
   }

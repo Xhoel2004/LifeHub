@@ -1,0 +1,73 @@
+<div class="backdrop" (click)="cancelled.emit()">
+  <aside class="drawer glass-panel" (click)="$event.stopPropagation()">
+    <header class="drawer-header">
+      <h2>{{ isEditMode() ? 'Edit entry' : 'New entry' }}</h2>
+      <button type="button" class="close-btn" (click)="cancelled.emit()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" />
+        </svg>
+      </button>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="drawer-form">
+      <div class="type-toggle">
+        <label class="type-option" [class.active]="form.controls.type.value === 'EXPENSE'">
+          <input type="radio" formControlName="type" value="EXPENSE" />
+          Expense
+        </label>
+        <label class="type-option" [class.active]="form.controls.type.value === 'INCOME'">
+          <input type="radio" formControlName="type" value="INCOME" />
+          Income
+        </label>
+      </div>
+
+      <div class="field-row">
+        <div class="field-col">
+          <label for="amount">Amount</label>
+          <input id="amount" type="number" step="0.01" min="0.01" formControlName="amount" placeholder="0.00" />
+          @if (form.controls.amount.invalid && form.controls.amount.touched) {
+            <p class="field-error">Enter an amount greater than 0.</p>
+          }
+        </div>
+
+        <div class="field-col">
+          <label for="entryDate">Date</label>
+          <input id="entryDate" type="date" formControlName="entryDate" />
+        </div>
+      </div>
+
+      <label for="category">Category</label>
+      <input
+        id="category"
+        type="text"
+        formControlName="category"
+        placeholder="e.g. Groceries"
+        list="category-suggestions"
+        autocomplete="off"
+      />
+      <datalist id="category-suggestions">
+        @for (c of suggestedCategories; track c) {
+          <option [value]="c"></option>
+        }
+      </datalist>
+      @if (form.controls.category.invalid && form.controls.category.touched) {
+        <p class="field-error">Category is required.</p>
+      }
+
+      <label for="description">Description</label>
+      <textarea
+        id="description"
+        formControlName="description"
+        rows="2"
+        placeholder="Add more detail (optional)"
+      ></textarea>
+
+      <div class="drawer-actions">
+        <button type="button" class="btn-ghost" (click)="cancelled.emit()">Cancel</button>
+        <button type="submit" class="btn-gradient" [disabled]="submitting()">
+          {{ submitting() ? 'Saving…' : isEditMode() ? 'Save changes' : 'Add entry' }}
+        </button>
+      </div>
+    </form>
+  </aside>
+</div>

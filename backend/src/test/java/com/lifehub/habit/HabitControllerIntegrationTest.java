@@ -55,7 +55,7 @@ class HabitControllerIntegrationTest {
     }
 
     private long createHabit(String token, String name) throws Exception {
-        HabitRequest request = new HabitRequest(name, null);
+        HabitRequest request = new HabitRequest(name, null, 7);
         MvcResult result = mockMvc.perform(post("/api/habits")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -67,7 +67,7 @@ class HabitControllerIntegrationTest {
 
     @Test
     void createHabitRequiresAuthentication() throws Exception {
-        HabitRequest request = new HabitRequest("Meditate", null);
+        HabitRequest request = new HabitRequest("Meditate", null, 7);
 
         mockMvc.perform(post("/api/habits")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -79,7 +79,7 @@ class HabitControllerIntegrationTest {
     void fullCrudLifecycleForOwner() throws Exception {
         String token = registerAndGetToken("habitowner1@example.com");
 
-        HabitRequest createReq = new HabitRequest("Read", "20 pages a day");
+        HabitRequest createReq = new HabitRequest("Read", "20 pages a day", 7);
 
         MvcResult createResult = mockMvc.perform(post("/api/habits")
                         .header("Authorization", "Bearer " + token)
@@ -101,7 +101,7 @@ class HabitControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
 
-        HabitRequest updateReq = new HabitRequest("Read daily", "30 pages a day");
+        HabitRequest updateReq = new HabitRequest("Read daily", "30 pages a day", 7);
 
         mockMvc.perform(put("/api/habits/" + habitId)
                         .header("Authorization", "Bearer " + token)
@@ -191,7 +191,7 @@ class HabitControllerIntegrationTest {
         mockMvc.perform(put("/api/habits/" + habitId)
                         .header("Authorization", "Bearer " + otherToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new HabitRequest("Hacked", null))))
+                        .content(objectMapper.writeValueAsString(new HabitRequest("Hacked", null, 7))))
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(delete("/api/habits/" + habitId).header("Authorization", "Bearer " + otherToken))
@@ -209,7 +209,7 @@ class HabitControllerIntegrationTest {
     @Test
     void createHabitValidatesBlankName() throws Exception {
         String token = registerAndGetToken("habitvalidation1@example.com");
-        HabitRequest badReq = new HabitRequest("", null);
+        HabitRequest badReq = new HabitRequest("", null, 7);
 
         mockMvc.perform(post("/api/habits")
                         .header("Authorization", "Bearer " + token)

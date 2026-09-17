@@ -1,0 +1,192 @@
+<div class="page">
+    <section class="header-row">
+      <div>
+        <h2>Budget</h2>
+        <p class="subtitle">Track income and expenses month by month.</p>
+      </div>
+      <button type="button" class="btn-gradient new-entry-btn" (click)="openCreate()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+          <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+        </svg>
+        New entry
+      </button>
+    </section>
+
+    <section class="month-nav glass-panel">
+      <button type="button" class="nav-btn" (click)="goToPreviousMonth()" aria-label="Previous month">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <span class="month-label">{{ monthLabel() }}</span>
+      <button type="button" class="nav-btn" (click)="goToNextMonth()" aria-label="Next month">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </section>
+
+    @if (loading()) {
+      <div class="summary-grid">
+        @for (i of [0, 1, 2]; track i) {
+          <div class="summary-tile glass-panel skeleton-tile"></div>
+        }
+      </div>
+      <div class="entries-panel glass-panel skeleton-panel"></div>
+    } @else if (loadError()) {
+      <div class="state-panel glass-panel">
+        <p>Couldn't load your budget.</p>
+        <button type="button" class="btn-ghost" (click)="retry()">Try again</button>
+      </div>
+    } @else {
+      <section class="summary-grid">
+        <div class="summary-tile glass-panel">
+          <span class="summary-value income">{{ summary().totalIncome | number: '1.2-2' }}</span>
+          <span class="summary-label">Income</span>
+        </div>
+        <div class="summary-tile glass-panel">
+          <span class="summary-value expense">{{ summary().totalExpense | number: '1.2-2' }}</span>
+          <span class="summary-label">Expenses</span>
+        </div>
+        <div class="summary-tile glass-panel" [class.summary-tile-danger]="summary().net < 0">
+          <span class="summary-value" [class.negative]="summary().net < 0">{{ summary().net | number: '1.2-2' }}</span>
+          <span class="summary-label">Net</span>
+        </div>
+      </section>
+
+      @if (entries().length > 0) {
+        <section class="budget-grid">
+          <div class="chart-panel glass-panel">
+            <h3>Spending by category</h3>
+            @if (categorySlices().length === 0) {
+              <p class="no-data">No expenses logged for {{ monthLabel() }} yet.</p>
+            } @else {
+              <div class="donut-row">
+                <div class="donut" [style.background]="donutGradient()">
+                  <div class="donut-hole">
+                    <span class="donut-value">{{ summary().totalExpense | number: '1.0-0' }}</span>
+                    <span class="donut-label">SPENT</span>
+                  </div>
+                </div>
+                <div class="category-list">
+                  @for (slice of categorySlices(); track slice.name) {
+                    <div class="category-row">
+                      <div class="category-top">
+                        <span class="category-dot" [style.background]="slice.color"></span>
+                        <span class="category-name">{{ slice.name }}</span>
+                        <span class="category-amount">{{ slice.amount | number: '1.2-2' }}</span>
+                        <span class="category-pct">{{ slice.pct }}%</span>
+                      </div>
+                      <div class="category-bar-track">
+                        <div class="category-bar-fill" [style.width.%]="slice.pct" [style.background]="slice.color"></div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="chart-panel glass-panel">
+            <div class="chart-header">
+              <h3>Monthly overview</h3>
+              <span class="chart-tag">6 MONTHS</span>
+            </div>
+            @if (overviewLoading()) {
+              <div class="bars-skeleton"></div>
+            } @else {
+              <div class="bars-row">
+                @for (bar of monthBars(); track bar.label) {
+                  <div class="bar-col">
+                    <div class="bar-pair">
+                      <div
+                        class="bar income-bar"
+                        [style.height.%]="bar.incomeHeightPct"
+                        [title]="'Income: ' + bar.incomeLabel"
+                      ></div>
+                      <div
+                        class="bar expense-bar"
+                        [style.height.%]="bar.expenseHeightPct"
+                        [title]="'Expenses: ' + bar.expenseLabel"
+                      ></div>
+                    </div>
+                    <span class="bar-month-label">{{ bar.label }}</span>
+                  </div>
+                }
+              </div>
+              <div class="bars-legend">
+                <span><span class="legend-swatch income"></span>Income</span>
+                <span><span class="legend-swatch expense"></span>Expenses</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="entries-panel glass-panel">
+        @if (entries().length === 0) {
+          <div class="empty-state">
+            <h3>No entries this month</h3>
+            <p>Add your first income or expense entry for {{ monthLabel() }}.</p>
+            <button type="button" class="btn-gradient" (click)="openCreate()">+ Add entry</button>
+          </div>
+        } @else {
+          <h3 class="entries-heading">Recent transactions</h3>
+          <ul class="entry-list">
+            @for (entry of entries(); track entry.id) {
+              <li class="entry-row">
+                <div class="entry-main" (click)="openEdit(entry)">
+                  <span class="entry-dot" [class]="entry.type === 'INCOME' ? 'income' : 'expense'"></span>
+                  <div class="entry-info">
+                    <span class="entry-category">{{ entry.category }}</span>
+                    @if (entry.description) {
+                      <span class="entry-description">{{ entry.description }}</span>
+                    }
+                  </div>
+                  <span class="entry-date">{{ entry.entryDate }}</span>
+                  <span class="entry-amount" [class]="entry.type === 'INCOME' ? 'income' : 'expense'">
+                    {{ entry.type === 'INCOME' ? '+' : '-' }}{{ entry.amount | number: '1.2-2' }}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  class="icon-btn danger"
+                  (click)="confirmDelete(entry)"
+                  aria-label="Delete entry"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18" stroke-linecap="round" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path
+                      d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+</div>
+
+@if (drawerState(); as state) {
+  <app-budget-entry-form-drawer
+    [editingEntry]="state.entry"
+    [submitting]="savingEntry()"
+    (save)="saveEntry($event)"
+    (cancelled)="closeDrawer()"
+  />
+}
+
+@if (pendingDelete(); as entry) {
+  <app-confirm-dialog
+    title="Delete entry?"
+    [message]="'This will permanently remove \'' + entry.category + '\'.'"
+    confirmLabel="Delete"
+    (confirmed)="performDelete()"
+    (cancelled)="cancelDelete()"
+  />
+}

@@ -1,0 +1,20 @@
+CREATE TABLE subscriptions (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT NOT NULL,
+    name            VARCHAR(100) NOT NULL,
+    category        ENUM('ENTERTAINMENT','MUSIC','STREAMING','SOFTWARE','FITNESS','HOUSING','UTILITIES',
+                          'PHONE_INTERNET','INSURANCE','TRANSPORTATION','EDUCATION','GAMING','SHOPPING','OTHER') NOT NULL,
+    amount          DECIMAL(12,2) NOT NULL,
+    currency        VARCHAR(3) NOT NULL,
+    billing_cycle   ENUM('WEEKLY','MONTHLY','YEARLY') NOT NULL,
+    next_due_date   DATE NOT NULL,
+    payment_method  ENUM('CREDIT_CARD','DEBIT_CARD','BANK_TRANSFER','CASH','PAYPAL','OTHER') NOT NULL,
+    status          ENUM('ACTIVE','PAUSED','CANCELLED') NOT NULL DEFAULT 'ACTIVE',
+    notes           VARCHAR(500),
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_subscriptions_user_id (user_id),
+    INDEX idx_subscriptions_next_due_date (next_due_date),
+    INDEX idx_subscriptions_status (status)
+);

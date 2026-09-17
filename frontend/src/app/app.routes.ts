@@ -33,6 +33,12 @@ export const routes: Routes = [
         data: { title: 'Budget', crumb: 'Money' },
       },
       {
+        path: 'subscriptions',
+        loadComponent: () =>
+          import('./features/subscriptions/subscriptions-page/subscriptions-page').then((m) => m.SubscriptionsPage),
+        data: { title: 'Subscriptions', crumb: 'Recurring' },
+      },
+      {
         path: 'habits',
         loadComponent: () => import('./features/habits/habits-page/habits-page').then((m) => m.HabitsPage),
         data: { title: 'Habits', crumb: 'Streaks' },

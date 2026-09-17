@@ -4,3 +4,8 @@ export interface UserResponse {
   displayName: string;
   createdAt: string;
 }
+
+export interface UpdateProfileRequest {
+  displayName: string;
+  email: string;
+}

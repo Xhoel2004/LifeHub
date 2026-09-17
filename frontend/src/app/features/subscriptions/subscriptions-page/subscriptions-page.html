@@ -1,0 +1,311 @@
+<div class="page">
+  <section class="header-row">
+    <div>
+      <h2>Subscriptions</h2>
+      <p class="subtitle">Track recurring bills, memberships and software so nothing renews as a surprise.</p>
+    </div>
+    <button type="button" class="btn-gradient new-sub-btn" (click)="openCreate()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+        <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+      </svg>
+      Add Subscription
+    </button>
+  </section>
+
+  @if (loading()) {
+    <div class="summary-grid">
+      @for (i of [0, 1, 2, 3]; track i) {
+        <div class="summary-tile glass-panel skeleton-tile"></div>
+      }
+    </div>
+    <div class="entries-panel glass-panel skeleton-panel"></div>
+  } @else if (loadError()) {
+    <div class="state-panel glass-panel">
+      <p>Couldn't load your subscriptions.</p>
+      <button type="button" class="btn-ghost" (click)="retry()">Try again</button>
+    </div>
+  } @else {
+    <section class="summary-grid">
+      <div class="summary-tile glass-panel">
+        <span class="summary-value">{{ activeSubscriptions().length }}</span>
+        <span class="summary-label">Active subscriptions</span>
+      </div>
+      <div class="summary-tile glass-panel">
+        <span class="summary-value">{{ monthlySpend() | number: '1.2-2' }}</span>
+        <span class="summary-label">Monthly spend{{ primaryCurrency() ? ' (' + primaryCurrency() + ')' : '' }}</span>
+      </div>
+      <div class="summary-tile glass-panel">
+        <span class="summary-value">{{ yearlySpend() | number: '1.2-2' }}</span>
+        <span class="summary-label">Yearly spend{{ primaryCurrency() ? ' (' + primaryCurrency() + ')' : '' }}</span>
+      </div>
+      @if (nextRenewal(); as next) {
+        <div class="summary-tile glass-panel" [class.summary-tile-danger]="next.renewal.overdue">
+          <span class="summary-value renewal-name">{{ next.subscription.name }}</span>
+          <span class="summary-label">{{ next.renewal.text }}</span>
+        </div>
+      } @else {
+        <div class="summary-tile glass-panel">
+          <span class="summary-value">–</span>
+          <span class="summary-label">No upcoming renewals</span>
+        </div>
+      }
+    </section>
+
+    @if (subscriptions().length > 0) {
+      <section class="sub-grid">
+        <div class="chart-panel glass-panel">
+          <h3>Spending by category</h3>
+          @if (categorySlices().length === 0) {
+            <p class="no-data">No active subscriptions yet.</p>
+          } @else {
+            <div class="donut-row">
+              <div class="donut" [style.background]="donutGradient()">
+                <div class="donut-hole">
+                  <span class="donut-value">{{ monthlySpend() | number: '1.0-0' }}</span>
+                  <span class="donut-label">PER MONTH</span>
+                </div>
+              </div>
+              <div class="category-list">
+                @for (slice of categorySlices(); track slice.name) {
+                  <div class="category-row">
+                    <div class="category-top">
+                      <span class="category-dot" [style.background]="slice.color"></span>
+                      <span class="category-name">{{ slice.name }}</span>
+                      <span class="category-amount">{{ slice.amount | number: '1.2-2' }}</span>
+                      <span class="category-pct">{{ slice.pct }}%</span>
+                    </div>
+                    <div class="category-bar-track">
+                      <div class="category-bar-fill" [style.width.%]="slice.pct" [style.background]="slice.color"></div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="chart-panel glass-panel">
+          <div class="chart-header">
+            <h3>Upcoming renewals</h3>
+            <div class="window-toggle">
+              <button
+                type="button"
+                [class.active]="renewalWindow() === 7"
+                (click)="setRenewalWindow(7)"
+              >
+                7 days
+              </button>
+              <button
+                type="button"
+                [class.active]="renewalWindow() === 30"
+                (click)="setRenewalWindow(30)"
+              >
+                30 days
+              </button>
+            </div>
+          </div>
+
+          @if (upcomingRenewals().length === 0) {
+            <p class="no-data">Nothing renewing in the next {{ renewalWindow() }} days.</p>
+          } @else {
+            <ul class="renewal-list">
+              @for (r of upcomingRenewals(); track r.subscription.id) {
+                <li class="renewal-row">
+                  <span class="renewal-info">
+                    <span class="renewal-sub-name">{{ r.subscription.name }}</span>
+                    <span class="renewal-date">{{ r.subscription.nextDueDate }}</span>
+                  </span>
+                  <span class="renewal-amount">{{ r.subscription.amount | number: '1.2-2' }} {{ r.subscription.currency }}</span>
+                  <span class="renewal-chip" [class.overdue]="r.renewal.overdue" [class.due-soon]="r.renewal.dueSoon && !r.renewal.overdue">
+                    {{ r.renewal.text }}
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+    }
+
+    <div class="filter-bar">
+      <input
+        class="filter-search"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
+        placeholder="Search subscriptions…"
+        aria-label="Search subscriptions"
+      />
+      <select
+        class="filter-select"
+        [value]="categoryFilter()"
+        (change)="setCategoryFilter($any($event.target).value)"
+        aria-label="Filter by category"
+      >
+        <option value="all">All categories</option>
+        @for (c of categoryOptions; track c) {
+          <option [value]="c">{{ categoryLabels[c] }}</option>
+        }
+      </select>
+      <select
+        class="filter-select"
+        [value]="statusFilter()"
+        (change)="setStatusFilter($any($event.target).value)"
+        aria-label="Filter by status"
+      >
+        <option value="all">All statuses</option>
+        <option value="ACTIVE">Active</option>
+        <option value="PAUSED">Paused</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+      <select
+        class="filter-select"
+        [value]="billingCycleFilter()"
+        (change)="setBillingCycleFilter($any($event.target).value)"
+        aria-label="Filter by billing cycle"
+      >
+        <option value="all">Any cycle</option>
+        @for (b of billingCycleOptions; track b) {
+          <option [value]="b">{{ billingCycleLabels[b] }}</option>
+        }
+      </select>
+      <select
+        class="filter-select"
+        [value]="paymentMethodFilter()"
+        (change)="setPaymentMethodFilter($any($event.target).value)"
+        aria-label="Filter by payment method"
+      >
+        <option value="all">Any payment method</option>
+        @for (p of paymentMethodOptions; track p) {
+          <option [value]="p">{{ paymentMethodLabels[p] }}</option>
+        }
+      </select>
+      <select
+        class="filter-select"
+        [value]="sortKey()"
+        (change)="setSortKey($any($event.target).value)"
+        aria-label="Sort subscriptions"
+      >
+        <option value="nextDueDate">Sort: Next due date</option>
+        <option value="name">Sort: Name</option>
+        <option value="amount">Sort: Amount</option>
+        <option value="category">Sort: Category</option>
+        <option value="status">Sort: Status</option>
+      </select>
+      @if (filtersActive()) {
+        <button type="button" class="filter-reset" (click)="clearFilters()">Reset</button>
+      }
+    </div>
+
+    <section class="entries-panel glass-panel">
+      @if (subscriptions().length === 0) {
+        <div class="empty-state">
+          <h3>No subscriptions yet.</h3>
+          <p>Add your first subscription to start tracking recurring bills.</p>
+          <button type="button" class="btn-gradient" (click)="openCreate()">Add your first subscription</button>
+        </div>
+      } @else if (filteredSubscriptions().length === 0) {
+        <div class="empty-state">
+          <h3>No matches</h3>
+          <p>No subscriptions match your filters.</p>
+          <button type="button" class="btn-ghost" (click)="clearFilters()">Clear filters</button>
+        </div>
+      } @else {
+        <h3 class="entries-heading">
+          {{ filteredSubscriptions().length }} subscription{{ filteredSubscriptions().length === 1 ? '' : 's' }}
+        </h3>
+        <ul class="entry-list">
+          @for (sub of filteredSubscriptions(); track sub.id) {
+            <li class="entry-row">
+              <div class="entry-main" (click)="openEdit(sub)">
+                <span class="status-dot" [class]="'status-' + sub.status.toLowerCase()"></span>
+                <div class="entry-info">
+                  <span class="entry-name">
+                    {{ sub.name }}
+                    @if (sub.status !== 'ACTIVE') {
+                      <span class="status-chip" [class]="'status-' + sub.status.toLowerCase()">{{ statusLabels[sub.status] }}</span>
+                    }
+                  </span>
+                  <span class="entry-meta">
+                    {{ categoryLabels[sub.category] }} · {{ billingCycleLabels[sub.billingCycle] }} ·
+                    {{ paymentMethodLabels[sub.paymentMethod] }}
+                  </span>
+                </div>
+                <span class="entry-due" [class.overdue]="getRenewalInfo(sub).overdue">
+                  {{ sub.status === 'ACTIVE' ? getRenewalInfo(sub).text : sub.nextDueDate }}
+                </span>
+                <span class="entry-amount">{{ sub.amount | number: '1.2-2' }} {{ sub.currency }}</span>
+              </div>
+              <div class="entry-actions">
+                @if (sub.status === 'ACTIVE') {
+                  <button
+                    type="button"
+                    class="pill-action"
+                    [disabled]="actioningId() === sub.id"
+                    (click)="pause(sub)"
+                  >
+                    Pause
+                  </button>
+                }
+                @if (sub.status === 'PAUSED') {
+                  <button
+                    type="button"
+                    class="pill-action"
+                    [disabled]="actioningId() === sub.id"
+                    (click)="resume(sub)"
+                  >
+                    Resume
+                  </button>
+                }
+                @if (sub.status !== 'CANCELLED') {
+                  <button
+                    type="button"
+                    class="pill-action danger"
+                    [disabled]="actioningId() === sub.id"
+                    (click)="cancel(sub)"
+                  >
+                    Cancel
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="icon-btn danger"
+                  (click)="confirmDelete(sub)"
+                  aria-label="Delete subscription"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18" stroke-linecap="round" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path
+                      d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>
+
+@if (drawerState(); as state) {
+  <app-subscription-form-drawer
+    [editingSubscription]="state.subscription"
+    [submitting]="savingSubscription()"
+    (save)="saveSubscription($event)"
+    (cancelled)="closeDrawer()"
+  />
+}
+
+@if (pendingDelete(); as sub) {
+  <app-confirm-dialog
+    title="Delete subscription?"
+    [message]="'This will permanently remove \'' + sub.name + '\'.'"
+    confirmLabel="Delete"
+    (confirmed)="performDelete()"
+    (cancelled)="cancelDelete()"
+  />
+}

@@ -14,6 +14,7 @@
       <button type="button" class="pill-btn" (click)="openCreate()">+ Add task</button>
       <a class="pill-btn" routerLink="/habits">Log habit</a>
       <a class="pill-btn" routerLink="/journal">New journal entry</a>
+      <a class="pill-btn" routerLink="/subscriptions">Add Subscription</a>
     </div>
   </section>
 
@@ -184,6 +185,45 @@
                   <div class="category-row">
                     <span class="category-name">{{ c.category }}</span>
                     <span class="mono-tag">{{ c.amount | number: '1.2-2' }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <div class="list-panel glass-panel">
+          <div class="panel-head">
+            <h3>Subscription overview</h3>
+            <a routerLink="/subscriptions">View All Subscriptions</a>
+          </div>
+
+          @if (subscriptionsLoading()) {
+            <div class="skeleton-inline"></div>
+          } @else if (subscriptionsError()) {
+            <p class="list-empty">
+              Couldn't load subscriptions.
+              <button type="button" class="btn-ghost" (click)="retrySubscriptions()">Try again</button>
+            </p>
+          } @else if (activeSubscriptions().length === 0) {
+            <p class="list-empty">No subscriptions yet. <a routerLink="/subscriptions">Add one</a>.</p>
+          } @else {
+            <div class="budget-balance">
+              <span class="balance-value">{{ subMonthlySpend() | number: '1.2-2' }}</span>
+              <span class="balance-note">per month · {{ subYearlySpend() | number: '1.2-2' }} per year</span>
+            </div>
+            <div class="spend-meta">
+              <span>{{ activeSubscriptions().length }} active</span>
+              @if (nextSubRenewal(); as next) {
+                <span>Next: {{ next.subscription.name }} ({{ next.renewal.text }})</span>
+              }
+            </div>
+            @if (subUpcoming().length > 0) {
+              <div class="category-list">
+                @for (r of subUpcoming(); track r.subscription.id) {
+                  <div class="category-row">
+                    <span class="category-name">{{ r.subscription.name }}</span>
+                    <span class="mono-tag">{{ r.renewal.text }}</span>
                   </div>
                 }
               </div>
